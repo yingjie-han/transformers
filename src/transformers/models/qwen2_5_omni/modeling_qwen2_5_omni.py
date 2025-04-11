@@ -767,7 +767,7 @@ class Qwen2_5OmniAudioEncoderLayer(nn.Module):
         hidden_states = self.fc2(hidden_states)
         hidden_states = residual + hidden_states
 
-        if hidden_states.dtype == torch.float16:
+        if hidden_states.dtype == torch.float16 or hidden_states.dtype == torch.bfloat16:
             clamp_value = torch.finfo(hidden_states.dtype).max - 1000
             hidden_states = torch.clamp(hidden_states, min=-clamp_value, max=clamp_value)
 
@@ -909,7 +909,7 @@ class Qwen2_5OmniAudioEncoder(Qwen2_5OmniPreTrainedModel):
         hidden_states_list = hidden_states.split(aftercnn_lens.tolist(), dim=0)
         token_audio_list = []
         for each_audio_states in hidden_states_list:
-            each_audio_states = self.avg_pooler(each_audio_states.transpose(0, 1)).transpose_(0, 1)
+            each_audio_states = self.avg_pooler(each_audio_states.permute(1, 0)).permute(1, 0)
             each_audio_states = self.ln_post(each_audio_states)
             each_audio_states = self.proj(each_audio_states)
             token_audio_list.append(each_audio_states)
