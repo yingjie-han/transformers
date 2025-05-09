@@ -65,12 +65,12 @@ def smart_resize(
     3. The aspect ratio of the image is maintained as closely as possible.
 
     """
-    if height < factor or width < factor:
-        raise ValueError(f"height:{height} and width:{width} must be larger than factor:{factor}")
-    elif max(height, width) / min(height, width) > 200:
+    if max(height, width) / min(height, width) > 200:
         raise ValueError(
             f"absolute aspect ratio must be smaller than 200, got {max(height, width) / min(height, width)}"
         )
+    height = max(height, factor)
+    width  = max(width, factor)
     h_bar = round(height / factor) * factor
     w_bar = round(width / factor) * factor
     if h_bar * w_bar > max_pixels:
@@ -247,15 +247,17 @@ class Qwen2VLImageProcessor(BaseImageProcessor):
         height, width = get_image_size(images[0], channel_dim=input_data_format)
         resized_height, resized_width = height, width
         processed_images = []
+        do_resize = True
         for image in images:
             if do_resize:
                 resized_height, resized_width = smart_resize(
                     height,
                     width,
-                    factor=patch_size * merge_size,
+                    factor=112,
                     min_pixels=size["shortest_edge"],
                     max_pixels=size["longest_edge"],
                 )
+                print(f"[ImageProcessor] Resized from {(height, width)} to {(resized_height, resized_width)}")
                 image = resize(
                     image, size=(resized_height, resized_width), resample=resample, input_data_format=input_data_format
                 )
